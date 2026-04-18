@@ -1,0 +1,58 @@
+groups:
+  - name: platform
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+      - alert: HighErrorRateWarning
+        expr: |
+          sum(rate(http_requests_total{job="api",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="api"}[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: api
+          team: platform
+        annotations:
+          summary: Elevated 5xx rate on the API
+          description: Error ratio is above the warning threshold.
+          runbook_url: https://runbooks.example.com/api-errors
+      - alert: HighErrorRateCritical
+        expr: |
+          sum(rate(http_requests_total{job="api",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="api"}[5m])) > 0.10
+        for: 2m
+        labels:
+          severity: critical
+          service: api
+          team: platform
+        annotations:
+          summary: API 5xx rate is critically high
+          description: Error ratio is above the critical threshold.
+          runbook_url: https://runbooks.example.com/api-errors
+      - alert: PodCrashLoopBackOff
+        expr: kube_pod_container_status_restarts_total{pod="payments-7d5bb9df6f-abcde",namespace="prod"} > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: payments
+          team: platform
+        annotations:
+          summary: A payments pod is restarting repeatedly
+          description: The alert is tied to a single pod name.
+          runbook_url: https://runbooks.example.com/payments-pod
+      - alert: ErrorRateDuplicate
+        expr: |
+          sum(rate(http_requests_total{job="api",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="api"}[5m])) > 0.10
+        for: 10m
+        labels:
+          severity: critical
+          service: api
+          team: platform
+        annotations:
+          summary: Duplicate critical API alert
+          description: Same signal as HighErrorRateCritical.
+          runbook_url: https://runbooks.example.com/api-errors
